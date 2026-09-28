@@ -3,7 +3,8 @@
   "services": {
     "server": {
       "root": "server",
-      "framework": "express"
+      "framework": "express",
+      "entrypoint": "src/app.ts"
     },
     "web": {
       "root": "standalone-sample/ios-native-wkwebview/web",
