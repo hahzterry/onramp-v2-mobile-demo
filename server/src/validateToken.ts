@@ -6,8 +6,14 @@ const TESTFLIGHT_EMAIL = 'reviewer@coinbase-demo.app';
 const TESTFLIGHT_PHONE = '+12345678901';
 const TESTFLIGHT_USER_ID = '286ef934-f3b8-4e94-b61f-1f1a088ac95e';
 
+// Cached user data must always include an `id` to satisfy the Express Request augmentation
+type CachedUserData = Record<string, unknown> & { id: string };
+
 // Cache validated tokens to reduce API calls
-const tokenCache = new Map<string, { userId: string; userData: Record<string, unknown>; expiresAt: number }>();
+const tokenCache = new Map<
+  string,
+  { userId: string; userData: CachedUserData; expiresAt: number }
+>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export async function validateAccessToken(
@@ -23,6 +29,10 @@ export async function validateAccessToken(
     const isTestFlightEmail = req.body?.email === TESTFLIGHT_EMAIL;
     const isTestFlightPhone = req.body?.phoneNumber === TESTFLIGHT_PHONE;
     // Note: isTestFlightUserId (req.body?.url) was removed — no route passes req.body.url anymore.
+    void TESTFLIGHT_USER_ID; // retained for future TestFlight bypass use
+    void isTestFlightToken;
+    void isTestFlightEmail;
+    void isTestFlightPhone;
 
     // DISABLED 2026-07-13: auth bypass removed due to security incident
     // if (isTestFlightToken || isTestFlightEmail || isTestFlightPhone || isTestFlightUserId) {
@@ -95,12 +105,13 @@ export async function validateAccessToken(
     console.log('✅ [AUTH] Token validated (fresh) for user:', userEmail);
 
     // Check if this is a TestFlight test account by email
-    const isTestAccount = userEmail === TESTFLIGHT_EMAIL || userEmail === 'devtest@coinbase-demo.app';
+    const isTestAccount =
+      userEmail === TESTFLIGHT_EMAIL || userEmail === 'devtest@coinbase-demo.app';
 
     // Cache the result (including userData so routes like /onramp/limits can access authenticationMethods)
     tokenCache.set(token as string, {
       userId: userData.userId,
-      userData: { ...userData, testAccount: isTestAccount },
+      userData: { ...userData, id: userData.userId, testAccount: isTestAccount },
       expiresAt: Date.now() + CACHE_TTL
     });
 
@@ -108,6 +119,7 @@ export async function validateAccessToken(
     req.userId = userData.userId;
     req.userData = {
       ...userData,
+      id: userData.userId,
       testAccount: isTestAccount // Mark as test account if email matches
     };
 
