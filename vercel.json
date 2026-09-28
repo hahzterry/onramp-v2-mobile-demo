@@ -1,28 +1,19 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "server": {
-      "root": "server",
-      "framework": "express",
-      "entrypoint": "src/app.ts"
-    },
-    "web": {
-      "root": "standalone-sample/ios-native-wkwebview/web",
-      "framework": "express"
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/src/app.ts",
+      "use": "@vercel/node"
     }
-  },
-  "rewrites": [
+  ],
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "server"
-      }
+      "src": "/api/(.*)",
+      "dest": "server/src/app.ts"
     },
     {
-      "source": "/(.*)",
-      "destination": {
-        "service": "web"
-      }
+      "src": "/(.*)",
+      "dest": "standalone-sample/ios-native-wkwebview/web/$1"
     }
   ]
 }
